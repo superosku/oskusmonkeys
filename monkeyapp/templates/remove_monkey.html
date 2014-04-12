@@ -1,0 +1,9 @@
+{% from "_formhelpers.html" import render_field %}
+{% extends "base.html" %}
+{% block body %}
+<h2>Sure to remove {{ monkey.name }}?</h2>
+	<form action="{{ url_for('.remove_monkey', ident=monkey.id) }}" method=post class=add-entry>
+		<input class="btn btn-default" type="submit" value="Ok">
+	</form>
+{% endblock %}
+

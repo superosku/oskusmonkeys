@@ -1,0 +1,100 @@
+import sys
+
+from monkeyapp.database import Base, db_session
+from flask import flash
+from wtforms.validators import Email, Required
+
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, func
+from sqlalchemy.orm import relationship, backref, joinedload, subqueryload, aliased
+from sqlalchemy.orm.query import Query
+
+friendship = Table('friendship', Base.metadata,
+			Column('m1_id', Integer, ForeignKey('user.id')),
+			Column('m2_id', Integer, ForeignKey('user.id'))
+)
+
+class User(Base):
+	__tablename__ = 'user'
+	id = Column(Integer, primary_key=True)
+	name = Column(String(80), unique=True, info={'validators': Required()})
+	email = Column(String(120), unique=True, info={'validators': Email()})
+	age = Column(Integer(), info={'validators': [Required()]})
+	best_friend_id = Column(Integer, ForeignKey('user.id'))
+
+	#best_friend = relationship('User', remote_side=[id], order_by=lambda: User.name)#, lazy='joined')
+	best_friend = relationship(lambda: User, remote_side=[id], order_by=lambda: User.name, lazy='joined')#, lazy='joined')
+	friends = relationship('User',
+		secondary=friendship,
+		primaryjoin=id==friendship.c.m1_id,
+		secondaryjoin=id==friendship.c.m2_id,
+		backref=backref('ofriends', lazy='dynamic'),
+		lazy='dynamic'
+		)
+	def add_friend(self, other):
+		if self != other:
+			if other not in self.friends:
+				self.friends.append(other)
+			if self not in other.friends:
+				other.friends.append(self)
+		db_session.add(self)
+		db_session.commit()
+	def remove_friend(self, other):
+		try:
+			if other.best_friend == self:
+				other.best_friend = None
+				db_session.commit() #Needed to avoid sqlalchemy.exc.CircularDependencyError
+			if self.best_friend == other:
+				self.best_friend = None
+			self.friends.remove(other)
+			other.friends.remove(self)
+			db_session.commit()
+		except Exception as inst:
+			db_session.rollback()
+			raise inst
+	def get_non_friends(self):
+		return User.query.except_(self.friends).filter(User.id!=self.id)
+	def make_best_friend(self, other):
+		#if not other in self.friends:
+		#	add_friend(other)
+		self.best_friend = other
+		db_session.commit()
+	def __init__(self, name, email, age):
+		self.name = name 
+		self.email = email
+		self.age = age
+	def __repr__(self):
+		return '<User %r>' % self.name
+def query_users(order=None):
+    #query = db_session.query(User, func.count(friendship)-1).join(friendship, User.id==friendship.c.m1_id).group_by(User)
+    best_friend_alias = aliased(User)
+    query = (db_session.query(User, func.count(friendship)-1, best_friend_alias) 
+        .join(friendship, User.id==friendship.c.m1_id) 
+        .outerjoin((best_friend_alias, User.best_friend)) 
+        .group_by(User) )
+    
+    
+    #query = db_session.query(User, func.count(friendship)-1) \
+    #			.join(friendship, User.id==friendship.c.m1_id) \
+    #			.group_by(User)
+    if order == 'name':
+        query = query.order_by(User.name)
+    elif order == '-name':
+        query = query.order_by(User.name.desc())
+    if order == 'email':
+        query = query.order_by(User.email)
+    elif order == '-email':
+        query = query.order_by(User.email.desc())
+    if order == 'age':
+        query = query.order_by(User.age)
+    elif order == '-age':
+        query = query.order_by(User.age.desc())
+    elif order == 'bf':
+        query = query.order_by(best_friend_alias.name)
+    elif order == '-bf':
+        query = query.order_by(best_friend_alias.name.desc())
+    elif order == 'friends':
+        query = query.order_by(func.count(friendship))
+    elif order == '-friends':
+        query = query.order_by(func.count(friendship).desc())
+    return query
+

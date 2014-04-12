@@ -1,0 +1,8 @@
+{% from "_formhelpers.html" import render_field %}
+{% extends "base.html" %}
+{% block body %}
+<h2>Sure to remove friendship {{ monkey1.name }} - {{ monkey2.name }}?</h2>
+	<form action="{{ url_for('.remove_friend', ident1=monkey1.id, ident2=monkey2.id) }}" method=post class=add-entry>
+		<input class="btn btn-default" type="submit" value="Ok">
+	</form>
+{% endblock %}

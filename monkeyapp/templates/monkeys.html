@@ -1,0 +1,48 @@
+{% from "_formhelpers.html" import render_field %}
+{% extends "base.html" %}
+{% block body %}
+	<h1>Monkeys</h1>
+	<h2>List of monkeys</h2>
+	{% if monkeys %}
+		<table class="table">
+			<tr>
+				<th><a href="{{ url_for('.monkeys')}}?ord={% if order=="name" %}-{% endif %}name">Name</a></th>
+				<th><a href="{{ url_for('.monkeys')}}?ord={% if order=="email" %}-{% endif %}email">Email</a></th>
+				<th><a href="{{ url_for('.monkeys')}}?ord={% if order=="age" %}-{% endif %}age">Age</a></th>
+				<th><a href="{{ url_for('.monkeys')}}?ord={% if order=="bf" %}-{% endif %}bf">Best friend</a></th>
+				<th><a href="{{ url_for('.monkeys')}}?ord={% if order=="friends" %}-{% endif %}friends">Friends</a></th>
+			</tr>
+			{% for monkey in monkeys %}
+				<tr>
+					<td><a href="{{ url_for('.view_monkey', ident=monkey[0].id) }}">{{ monkey[0].name }}</a></td>
+					<td>{{ monkey[0].email }}</td>
+					<td>{{ monkey[0].age }}</td>
+					<td>
+						{% if monkey[0].best_friend %}
+						<a href="{{ url_for('.view_monkey', ident=monkey[2].id) }}">{{ monkey[2].name }}</a>
+						{% endif %}
+					</td>
+					<td>{{ monkey[1] }}</td></tr>	
+			{% endfor %}
+		</table>
+	{% else %}
+		<p>No monkeys :/</p>
+	{% endif %}
+	<h2>Add new monkey</h2>
+	<form role="form" action="{{ url_for('.monkeys') }}" method=post class=add-entry>
+		<div class="row">
+		<div class="col-sm-4 col-xs-12">
+			{{ render_field(form.name, class='form-control') }}
+		</div>
+		<div class="col-sm-4 col-xs-12">
+			{{ render_field(form.email, class='form-control') }}
+		</div>
+		<div class="col-sm-4 col-xs-12">
+			{{ render_field(form.age, class='form-control') }}
+		</div>
+		</div>
+		<div class="form-group">
+			<input class="btn btn-default" type="submit" value="Add">
+		</div>
+	</form>
+{% endblock %}

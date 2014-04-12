@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block body %}
+	<form action="{{ url_for('add_monkey') }}" method=post class=add-entry>
+		<input type="text" name="name">
+		<input type="text" name="email">
+		<input type="text" name="age">
+		<input class="btn btn-default" type="submit" value="Add">
+	</form>
+	<ul>
+	{% for monkey in monkeys %}
+		<li>{{ monkey.name }}</li>	
+	{% else%}
+		<li>No monkeys :/</li>
+	{% endfor %}
+	</ul>
+{% endblock %}
