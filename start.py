@@ -1,2 +1,4 @@
+import os
 import monkeyapp
-app = monkeyapp.create_app('sqlite:///tmp/base.db')
+app = monkeyapp.create_app(os.environ['DATABASE_URL'])
+app.debug=True
