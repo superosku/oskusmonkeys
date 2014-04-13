@@ -1,3 +1,4 @@
 import os
 import monkeyapp
-app = monkeyapp.create_app(os.environ.get("DATABASE_URL","postgresql://pguser:password/dbname")
+app = monkeyapp.create_app(os.environ.get("HEROKU_POSTGRESQL_YELLOW_URL"))
+

@@ -19,7 +19,7 @@
 					<td>{{ monkey[0].age }}</td>
 					<td>
 						{% if monkey[0].best_friend %}
-						<a href="{{ url_for('.view_monkey', ident=monkey[2].id) }}">{{ monkey[2].name }}</a>
+						<a href="{{ url_for('.view_monkey', ident=monkey[2]) }}">{{ monkey[3] }}</a>
 						{% endif %}
 					</td>
 					<td>{{ monkey[1] }}</td></tr>	

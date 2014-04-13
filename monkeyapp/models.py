@@ -45,6 +45,8 @@ class User(Base):
 				db_session.commit() #Needed to avoid sqlalchemy.exc.CircularDependencyError
 			if self.best_friend == other:
 				self.best_friend = None
+			if self not in other.friends:
+				raise Exception
 			self.friends.remove(other)
 			other.friends.remove(self)
 			db_session.commit()
@@ -66,11 +68,13 @@ class User(Base):
 		return '<User %r>' % self.name
 def query_users(order=None):
     #query = db_session.query(User, func.count(friendship)-1).join(friendship, User.id==friendship.c.m1_id).group_by(User)
-    best_friend_alias = aliased(User)
-    query = (db_session.query(User, func.count(friendship)-1, best_friend_alias) 
-        .join(friendship, User.id==friendship.c.m1_id) 
+    best_friend_alias = aliased(User, name="bfalias")
+    query = (db_session.query(User, func.count(friendship.c.m1_id), best_friend_alias.id, best_friend_alias.name) 
+        .outerjoin(friendship, User.id==friendship.c.m1_id) 
         .outerjoin((best_friend_alias, User.best_friend)) 
-        .group_by(User) )
+        .group_by(User, best_friend_alias)
+        )
+    #query = db_session.query(User, func.count(friendship.c.m1_id)-1).join(friendship, User.id==friendship.c.m1_id).group_by(User)
     
     
     #query = db_session.query(User, func.count(friendship)-1) \
@@ -80,11 +84,11 @@ def query_users(order=None):
         query = query.order_by(User.name)
     elif order == '-name':
         query = query.order_by(User.name.desc())
-    if order == 'email':
+    elif order == 'email':
         query = query.order_by(User.email)
     elif order == '-email':
         query = query.order_by(User.email.desc())
-    if order == 'age':
+    elif order == 'age':
         query = query.order_by(User.age)
     elif order == '-age':
         query = query.order_by(User.age.desc())
@@ -93,8 +97,8 @@ def query_users(order=None):
     elif order == '-bf':
         query = query.order_by(best_friend_alias.name.desc())
     elif order == 'friends':
-        query = query.order_by(func.count(friendship))
+        query = query.order_by(func.count(friendship.c.m1_id))
     elif order == '-friends':
-        query = query.order_by(func.count(friendship).desc())
+        query = query.order_by(func.count(friendship.c.m1_id).desc())
     return query
 

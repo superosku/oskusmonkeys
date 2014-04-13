@@ -9,7 +9,8 @@ from monkeyapp.models import User
 
 class MyBaseCase(unittest.TestCase):
     def setUp(self):
-        self.app = monkeyapp.create_app('sqlite+pysqlite:////tmp/test23.db')
+        #self.app = monkeyapp.create_app('sqlite+pysqlite:////tmp/test23.db')
+        self.app = monkeyapp.create_app('postgresql+psycopg2://monkey:monkey@localhost/test')
         self.app.debug = True
         self.client = self.app.test_client()
         self.ctx = self.app.test_request_context()
@@ -107,6 +108,9 @@ class TestRequestsOccupied(MyBaseCase):
         db_session.commit()
     def test_user_count(self):
         assert User.query.count() == 20
+    def test_monkey_list_view(self):
+        rw = self.client.get('/monkeys')
+        assert not "No monkeys" in rw.data
     def test_view(self):
         user = User.query.filter_by(name="Test9").one()
         rw = self.client.get('/monkey/%i'%user.id)
@@ -121,7 +125,6 @@ class TestRequestsOccupied(MyBaseCase):
         user.add_friend(user2)
         rw = self.client.post('/monkey/%i/add_best_friend/'%user.id, data=dict(
             user=user2.id), follow_redirects=True)
-        #sys.stderr.write(rw.data)
         assert "Best friend updated" in rw.data
     def test_add_friend(self):
         user = User.query.filter_by(name="Test9").one()
