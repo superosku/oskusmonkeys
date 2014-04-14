@@ -2,7 +2,7 @@ import sys
 
 from monkeyapp.database import Base, db_session
 from flask import flash
-from wtforms.validators import Email, Required
+from wtforms.validators import Email, Required, NumberRange
 
 from sqlalchemy import Column, Integer, String, ForeignKey, Table, func
 from sqlalchemy.orm import relationship, backref, joinedload, subqueryload, aliased
@@ -16,11 +16,11 @@ friendship = Table('friendship', Base.metadata,
 class User(Base):
 	__tablename__ = 'user'
 	id = Column(Integer, primary_key=True)
-	name = Column(String(80), unique=True, info={'validators': Required()})
-	email = Column(String(120), unique=True, info={'validators': Email()})
-	age = Column(Integer(), info={'validators': [Required()]})
-	best_friend_id = Column(Integer, ForeignKey('user.id'))
+	name = Column(String(80), unique=True, nullable=False)#info={'validators': [Required()]})
+        email = Column(String(120), unique=True, nullable=False, info={'validators': [Email()]})
+	age = Column(Integer(), info={'min': 0})
 
+	best_friend_id = Column(Integer, ForeignKey('user.id'))
 	best_friend = relationship(lambda: User, remote_side=[id], order_by=lambda: User.name, lazy='joined')#, lazy='joined')
 	friends = relationship('User',
 		secondary=friendship,
