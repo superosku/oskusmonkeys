@@ -123,6 +123,7 @@ class TestRequests(MyBaseCase):
         rw = self.client.get('/monkey/100', follow_redirects=True)
         assert "Not Found" in rw.data
 
+
 class TestRequestsOccupied(MyBaseCase):
     def setUp(self):
         super(TestRequestsOccupied, self).setUp()
@@ -209,6 +210,64 @@ class TestRequestsOccupied(MyBaseCase):
             age=user.age))
         assert "Invalid email" in rw.data
 
+class TestOrder(MyBaseCase):
+    def setUp(self):
+        super(TestOrder, self).setUp()
+        self.ways = ['name', 'age', 'email', 'bf', 'friends']
+        self.l = []
+        self.l.append(User("a", "aa@aa.fi", 20))
+        self.l.append(User("b", "ba@aa.fi", 25))
+        self.l.append(User("c", "ea@aa.fi", 23))
+        self.l.append(User("d", "ca@aa.fi", 30))
+        self.l.append(User("e", "da@aa.fi", 10))
+        for i in self.l:
+            db_session.add(i)
+        db_session.commit()
+        monkeys = User.query.all()
+        monkeys[0].add_friend(monkeys[1])
+        monkeys[0].add_friend(monkeys[4])
+        monkeys[0].make_best_friend(monkeys[4])
+        monkeys[4].make_best_friend(monkeys[0])
+        monkeys[2].add_friend(monkeys[1])
+        monkeys[3].add_friend(monkeys[1])
+        monkeys[4].add_friend(monkeys[1])
+    def test_no_failure(self):
+        for i in self.ways:
+            monkeyapp.models.query_users(i)
+            monkeyapp.models.query_users('-'+i)
+    def test_order_by_name(self):
+        prev = None
+        for monkey, count, bfid, bfname in monkeyapp.models.query_users('name'):
+            if prev != None:
+                assert monkey.name >= prev.name
+            prev = monkey
+        prev = None
+        for monkey, count, bfid, bfname in monkeyapp.models.query_users('-name'):
+            if prev != None:
+                assert monkey.name <= prev.name
+            prev = monkey
+    def test_order_by_friend_count(self):
+        prev = None
+        for monkey, friend_count, bfid, bfname in monkeyapp.models.query_users('friends'):
+            if prev != None:
+                assert friend_count >= prev
+            prev = friend_count
+        prev = None
+        for monkey, friend_count, bfid, bfname in monkeyapp.models.query_users('-friends'):
+            if prev != None:
+                assert friend_count <= prev
+            prev = friend_count
+    def test_order_by_best_friend_name(self):
+        prev = None
+        for monkey, friend_count, bfid, bfname in monkeyapp.models.query_users('bf'):
+            if prev != None:
+                assert bfname >= prev or bfname == None or prev == None
+            prev = bfname
+        prev = None
+        for monkey, friend_count, bfid, bfname in monkeyapp.models.query_users('-bf'):
+            if prev != None:
+                assert bfname <= prev or bfname == None or prev == None
+            prev = bfname
 
 if __name__ == '__main__':
     unittest.main()
