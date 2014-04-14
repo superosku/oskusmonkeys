@@ -76,18 +76,28 @@ class TestRequests(MyBaseCase):
             age=20,
         ), follow_redirects=True)
         assert "newmonkeyname" in rw.data
-    def test_add_monkey_wrongly(self):
+    def test_add_monkey_no_name(self):
         rw = self.client.post('/monkeys', data=dict(
             name="",
             email="t@t.t",
             age=20,
         ), follow_redirects=True)
         assert not "New monkey added" in rw.data
-        assert "Field required" in rw.data
+        #sys.stderr.write(rw.data)
+        assert "This field is required" in rw.data
+    def test_add_monkey_no_email(self):
+        rw = self.client.post('/monkeys', data=dict(
+            name="monkeyname",
+            email="",
+            age=20,
+        ), follow_redirects=True)
+        assert not "New monkey added" in rw.data
+        #sys.stderr.write(rw.data)
+        assert "This field is required" in rw.data
     def test_same_names(self):
         rw = self.client.post('/monkeys', data=dict(
             name="newmonkeyname",
-            email="t@t.fi",
+            email="tttt@t.fi",
             age=20,
         ), follow_redirects=True)
         rw = self.client.post('/monkeys', data=dict(
@@ -96,6 +106,19 @@ class TestRequests(MyBaseCase):
             age=20,
         ), follow_redirects=True)
         assert "Already exists" in rw.data
+    def test_same_email(self):
+        rw = self.client.post('/monkeys', data=dict(
+            name="newmonkeyname",
+            email="t@t.fi",
+            age=20,
+        ), follow_redirects=True)
+        rw = self.client.post('/monkeys', data=dict(
+            name="secondmonkeyname",
+            email="t@t.fi",
+            age=20,
+        ), follow_redirects=True)
+        assert "Already exists" in rw.data
+
     def test_404(self):
         rw = self.client.get('/monkey/100', follow_redirects=True)
         assert "Not Found" in rw.data
