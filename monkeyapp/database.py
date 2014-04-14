@@ -4,10 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from flask import current_app
 
-#engine = create_engine('sqlite:////tmp/test.db', convert_unicode=True)
-#db_session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 db_session = scoped_session(lambda: create_session(autocommit=False, autoflush=False, bind=current_app.engine))
-#db_session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=current_app.engine))
 
 Base = declarative_base()
 Base.query = db_session.query_property()

@@ -4,7 +4,7 @@ import unittest
 import tempfile
 
 import monkeyapp
-from monkeyapp.database import db_session, init_db, create_all, drop_all
+from monkeyapp.database import db_session, create_all, drop_all
 from monkeyapp.models import User
 
 class MyBaseCase(unittest.TestCase):

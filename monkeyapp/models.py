@@ -21,7 +21,6 @@ class User(Base):
 	age = Column(Integer(), info={'validators': [Required()]})
 	best_friend_id = Column(Integer, ForeignKey('user.id'))
 
-	#best_friend = relationship('User', remote_side=[id], order_by=lambda: User.name)#, lazy='joined')
 	best_friend = relationship(lambda: User, remote_side=[id], order_by=lambda: User.name, lazy='joined')#, lazy='joined')
 	friends = relationship('User',
 		secondary=friendship,
@@ -67,19 +66,12 @@ class User(Base):
 	def __repr__(self):
 		return '<User %r>' % self.name
 def query_users(order=None):
-    #query = db_session.query(User, func.count(friendship)-1).join(friendship, User.id==friendship.c.m1_id).group_by(User)
     best_friend_alias = aliased(User, name="bfalias")
     query = (db_session.query(User, func.count(friendship.c.m1_id), best_friend_alias.id, best_friend_alias.name) 
         .outerjoin(friendship, User.id==friendship.c.m1_id) 
         .outerjoin((best_friend_alias, User.best_friend)) 
         .group_by(User, best_friend_alias)
         )
-    #query = db_session.query(User, func.count(friendship.c.m1_id)-1).join(friendship, User.id==friendship.c.m1_id).group_by(User)
-    
-    
-    #query = db_session.query(User, func.count(friendship)-1) \
-    #			.join(friendship, User.id==friendship.c.m1_id) \
-    #			.group_by(User)
     if order == 'name':
         query = query.order_by(User.name)
     elif order == '-name':
