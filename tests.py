@@ -1,14 +1,12 @@
 import sys
 import os
-import unittest
-import tempfile
 import monkeyapp
 from monkeyapp.database import db_session, create_all, drop_all
 from monkeyapp.models import User
 
 
-class MyBaseCase(unittest.TestCase):
-    def setUp(self):
+class MyBaseCase(object):
+    def setup(self):
         # self.app = monkeyapp.create_app('sqlite+pysqlite:////tmp/test23.db')
         self.app = monkeyapp.create_app(
             'postgresql+psycopg2://monkey:monkey@localhost/test')
@@ -18,7 +16,7 @@ class MyBaseCase(unittest.TestCase):
         self.ctx.push()
         create_all()
 
-    def tearDown(self):
+    def teardown(self):
         db_session.remove()
         drop_all()
         self.ctx.pop()
@@ -27,16 +25,14 @@ class MyBaseCase(unittest.TestCase):
 class TestDatabase(MyBaseCase):
     def test_database_empty(self):
         u = monkeyapp.models.User.query.all()
-        self.assertEqual(
-            len(u), 0,
-            "Database should be empty this point, it is " + str(len(u)))
+        assert len(u) == 0
 
     def test_add_monkeys(self):
         db_session.add(User("Test1", "test@test.fi", 20))
         db_session.add(User("Test2", "test1@test.fi", 20))
         db_session.commit()
         u = monkeyapp.models.User.query.all()
-        self.assertEqual(len(u), 2, "Database should be empty this point")
+        assert len(u) == 2
 
     def test_friendship(self):
         db_session.add(User("Test1", "test1@test.fi", 20))
@@ -44,16 +40,11 @@ class TestDatabase(MyBaseCase):
         db_session.commit()
         users = User.query.all()
         users[0].add_friend(users[1])
-        self.assertEqual(
-            users[0].friends.count(), 1, "This user should have 1 friend")
-        self.assertEqual(
-            users[1].friends.count(), 1,
-            "Also the friend should have 1 friend")
+        assert users[0].friends.count() == 1
+        assert users[1].friends.count() == 1
         users[0].remove_friend(users[1])
-        self.assertEqual(
-            users[0].friends.count(), 0, "Removing friends should also work")
-        self.assertEqual(
-            users[1].friends.count(), 0, "Removing friends should also work")
+        assert users[0].friends.count() == 0
+        assert users[1].friends.count() == 0
 
     def test_best_friend(self):
         db_session.add(User("Test1", "test1@test.fi", 20))
@@ -62,14 +53,10 @@ class TestDatabase(MyBaseCase):
         users = User.query.all()
         users[0].add_friend(users[1])
         users[0].make_best_friend(users[1])
-        self.assertEqual(
-            users[0].best_friend, users[1], "Should be his best friend")
-        self.assertEqual(
-            users[1].best_friend, None, "Should not have best friend")
+        assert users[0].best_friend == users[1]
+        assert users[1].best_friend is None
         users[0].remove_friend(users[1])
-        self.assertEqual(
-            users[0].best_friend, None,
-            "Removing friendship should also remove best friendship")
+        assert users[0].best_friend is None
         users = User.query.all()
 
     def test_best_friend_circular_conflict(self):
@@ -147,8 +134,8 @@ class TestRequests(MyBaseCase):
 
 
 class TestRequestsOccupied(MyBaseCase):
-    def setUp(self):
-        super(TestRequestsOccupied, self).setUp()
+    def setup(self):
+        super(TestRequestsOccupied, self).setup()
         for i in range(20):
             db_session.add(User("Test%i" % i, "test%i@test.fi" % i, 20))
         db_session.commit()
@@ -259,8 +246,8 @@ class TestRequestsOccupied(MyBaseCase):
 
 
 class TestOrder(MyBaseCase):
-    def setUp(self):
-        super(TestOrder, self).setUp()
+    def setup(self):
+        super(TestOrder, self).setup()
         self.ways = ['name', 'age', 'email', 'bf', 'friends']
         self.l = []
         self.l.append(User("a", "aa@aa.fi", 20))
@@ -326,7 +313,3 @@ class TestOrder(MyBaseCase):
             if prev is not None:
                 assert bfname <= prev or bfname is None or prev is None
             prev = bfname
-
-
-if __name__ == '__main__':
-    unittest.main()
