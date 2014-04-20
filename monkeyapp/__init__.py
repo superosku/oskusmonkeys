@@ -1,7 +1,6 @@
-#import os
-#import sqlite3
 from flask import Flask
 from sqlalchemy import create_engine
+
 
 def create_app(db_uri):
     app = Flask(__name__)
@@ -10,4 +9,3 @@ def create_app(db_uri):
     app.register_blueprint(api)
     app.secret_key = "devays key"
     return app
-
