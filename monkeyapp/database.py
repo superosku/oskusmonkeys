@@ -9,12 +9,12 @@ db_session = scoped_session(lambda: create_session(autocommit=False, autoflush=F
 Base = declarative_base()
 Base.query = db_session.query_property()
 def create_all():
-	init_db()
-	pass
+    init_db()
+    pass
 def drop_all():
-	import monkeyapp.models
-	Base.metadata.drop_all(bind=current_app.engine)
+    import monkeyapp.models
+    Base.metadata.drop_all(bind=current_app.engine)
 def init_db():
-	import monkeyapp.models
-	Base.metadata.create_all(bind=current_app.engine)
+    import monkeyapp.models
+    Base.metadata.create_all(bind=current_app.engine)
 
