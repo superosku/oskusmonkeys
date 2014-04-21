@@ -43,21 +43,21 @@ class User(Base):
             if self not in other.friends:
                 other.friends.append(self)
         db_session.add(self)
-        db_session.commit()
+        db_session.flush()
 
     def remove_friend(self, other):
         try:
             if other.best_friend == self:
                 other.best_friend = None
                 # Needed to avoid sqlalchemy.exc.CircularDependencyError
-                db_session.commit()
+                db_session.flush()
             if self.best_friend == other:
                 self.best_friend = None
             if self not in other.friends:
                 raise Exception
             self.friends.remove(other)
             other.friends.remove(self)
-            db_session.commit()
+            db_session.flush()
         except Exception as inst:
             db_session.rollback()
             raise inst
@@ -67,7 +67,7 @@ class User(Base):
 
     def make_best_friend(self, other):
         self.best_friend = other
-        db_session.commit()
+        db_session.flush()
 
     def __init__(self, name, email, age):
         self.name = name
