@@ -6,4 +6,9 @@ It is made with python and django. All of the requirements can bee seen in requi
 
 A demo can be found  [here](oskusmonkeys.herokuapp.com)
 
+## Testing
+
+Run tests like this:
+
+    py.test tests.py
 
