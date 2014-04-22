@@ -1,5 +1,5 @@
-from flask import Flask, request, render_template, g, flash
-from flask import redirect, url_for, session, Blueprint
+from flask import request, render_template, flash
+from flask import redirect, url_for, Blueprint
 from monkeyapp import models, forms
 from monkeyapp.database import db_session
 

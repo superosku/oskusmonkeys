@@ -1,5 +1,3 @@
-import sys
-import os
 import monkeyapp
 from monkeyapp.database import db_session, create_all, drop_all
 from monkeyapp.models import User

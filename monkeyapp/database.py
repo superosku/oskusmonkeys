@@ -1,5 +1,4 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker, create_session
+from sqlalchemy.orm import scoped_session, create_session
 from sqlalchemy.ext.declarative import declarative_base
 
 from flask import current_app
@@ -18,10 +17,8 @@ def create_all():
 
 
 def drop_all():
-    import monkeyapp.models
     Base.metadata.drop_all(bind=current_app.engine)
 
 
 def init_db():
-    import monkeyapp.models
     Base.metadata.create_all(bind=current_app.engine)
