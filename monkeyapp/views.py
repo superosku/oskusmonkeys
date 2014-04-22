@@ -119,3 +119,9 @@ def remove_monkey(ident):
 @api.app_errorhandler(404)
 def handle_404(error):
     return render_template('page_not_found.html'), 404
+
+
+@api.teardown_request
+def shutdown_session(exception=None):
+    db_session.commit()
+    db_session.remove()

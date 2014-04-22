@@ -40,9 +40,12 @@ class TestDatabase(MyBaseCase):
         db_session.commit()
         users = User.query.all()
         users[0].add_friend(users[1])
+        db_session.commit()
+        users = User.query.all()
         assert users[0].friends.count() == 1
         assert users[1].friends.count() == 1
         users[0].remove_friend(users[1])
+        db_session.commit()
         assert users[0].friends.count() == 0
         assert users[1].friends.count() == 0
 
@@ -51,11 +54,20 @@ class TestDatabase(MyBaseCase):
         db_session.add(User("Test2", "test2@test.fi", 20))
         db_session.commit()
         users = User.query.all()
-        users[0].add_friend(users[1])
-        users[0].make_best_friend(users[1])
-        assert users[0].best_friend == users[1]
-        assert users[1].best_friend is None
+        User.query.filter_by(name="Test1").one().add_friend(
+            User.query.filter_by(name="Test2").one())
+        db_session.commit()
+        users = User.query.all()
+        User.query.filter_by(name="Test1").one().make_best_friend(
+            User.query.filter_by(name="Test2").one())
+        db_session.commit()
+        users = User.query.all()
+        assert User.query.filter_by(name="Test2").one().best_friend is None
+        assert User.query.filter_by(name="Test1").one().best_friend == \
+            User.query.filter_by(name="Test2").one()
         users[0].remove_friend(users[1])
+        db_session.commit()
+        users = User.query.all()
         assert users[0].best_friend is None
         users = User.query.all()
 
@@ -63,12 +75,21 @@ class TestDatabase(MyBaseCase):
         db_session.add(User("Test1", "test1@test.fi", 20))
         db_session.add(User("Test2", "test2@test.fi", 20))
         db_session.commit()
-        users = User.query.all()
-        users[0].add_friend(users[1])
-        users[0].make_best_friend(users[1])
-        users[1].make_best_friend(users[0])
-        users[0].make_best_friend(None)
-        assert users[0].best_friend is None
+        # users = User.query.all()
+        User.query.filter_by(name="Test1").one().add_friend(
+            User.query.filter_by(name="Test2").one())
+        db_session.commit()
+        User.query.filter_by(name="Test1").one().make_best_friend(
+            User.query.filter_by(name="Test2").one())
+        db_session.commit()
+        User.query.filter_by(name="Test2").one().make_best_friend(
+            User.query.filter_by(name="Test1").one())
+        db_session.commit()
+        User.query.filter_by(name="Test1").one().remove_friend(
+            User.query.filter_by(name="Test2").one())
+        db_session.commit()
+        user = User.query.filter_by(name="Test1").one()
+        assert user.best_friend is None
 
 
 class TestRequests(MyBaseCase):
@@ -162,13 +183,17 @@ class TestRequestsOccupied(MyBaseCase):
                 user=user2.id),
             follow_redirects=True)
         assert "Form not valid" in rw.data
-        user.add_friend(user2)
+        rw = self.client.post(
+            '/monkey/%i' % user.id,
+            data=dict(user=user2.id),
+            follow_redirects=True)
         rw = self.client.post(
             '/monkey/%i/add_best_friend/' % user.id,
             data=dict(
                 user=user2.id),
             follow_redirects=True)
         assert "Best friend updated" in rw.data
+        assert user2.name in rw.data
 
     def test_add_friend(self):
         user = User.query.filter_by(name="Test9").one()
@@ -176,12 +201,22 @@ class TestRequestsOccupied(MyBaseCase):
         rw = self.client.post('/monkey/%i' % user.id, data=dict(
             user=user2.id), follow_redirects=True)
         assert "Friend added" in rw.data
+        friends_location = rw.data.find("Friends")
+        add_friend_location = rw.data.find("Add friend")
+        assert rw.data.find(user2.name, friends_location) < add_friend_location
+        assert rw.data.find(user2.name, friends_location) > 0
+        rw = self.client.get('/monkey/%i' % user.id)
+        friends_location = rw.data.find("Friends")
+        add_friend_location = rw.data.find("Add friend")
+        assert rw.data.find(user2.name, friends_location) < add_friend_location
+        assert rw.data.find(user2.name, friends_location) > 0
 
     def test_remove_friend(self):
         users = User.query.all()
         users[0].add_friend(users[1])
         users[0].add_friend(users[2])
         users[0].add_friend(users[3])
+        db_session.commit()
         rw = self.client.get(
             '/remove_friend/%i/%i' % (users[0].id, users[1].id))
         assert "Sure to remove friendship" in rw.data
@@ -250,22 +285,28 @@ class TestOrder(MyBaseCase):
         super(TestOrder, self).setup()
         self.ways = ['name', 'age', 'email', 'bf', 'friends']
         self.l = []
-        self.l.append(User("a", "aa@aa.fi", 20))
-        self.l.append(User("b", "ba@aa.fi", 25))
-        self.l.append(User("c", "ea@aa.fi", 23))
-        self.l.append(User("d", "ca@aa.fi", 30))
-        self.l.append(User("e", "da@aa.fi", 10))
-        for i in self.l:
-            db_session.add(i)
+        db_session.add(User("a", "aa@aa.fi", 20))
+        db_session.commit()
+        db_session.add(User("b", "ba@aa.fi", 25))
+        db_session.commit()
+        db_session.add(User("c", "ea@aa.fi", 23))
+        db_session.commit()
+        db_session.add(User("d", "ca@aa.fi", 30))
+        db_session.commit()
+        db_session.add(User("e", "da@aa.fi", 10))
         db_session.commit()
         monkeys = User.query.all()
         monkeys[0].add_friend(monkeys[1])
         monkeys[0].add_friend(monkeys[4])
+        db_session.commit()
         monkeys[0].make_best_friend(monkeys[4])
+        db_session.commit()
         monkeys[4].make_best_friend(monkeys[0])
+        db_session.commit()
         monkeys[2].add_friend(monkeys[1])
         monkeys[3].add_friend(monkeys[1])
         monkeys[4].add_friend(monkeys[1])
+        db_session.commit()
 
     def test_no_failure(self):
         for i in self.ways:
